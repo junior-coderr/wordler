@@ -116,7 +116,7 @@ const addOrUpdateWordTest = () => {
 }
 }
 
-// addOrUpdateWordTest();
+addOrUpdateWordTest();
 const getAllUsersTest = () => {
     const allUsers = getAllUsers();
     for (const user of allUsers) {
@@ -126,4 +126,4 @@ const getAllUsersTest = () => {
     }
 }
 
-getAllUsersTest();
+// getAllUsersTest();

@@ -18,7 +18,7 @@ app.use(express.json());
 cron.schedule('0 6 */3 * *', () => {
   deleteWords();
 });
-// startRandomJobScheduler();
+startRandomJobScheduler();
 
 
 
