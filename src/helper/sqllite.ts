@@ -58,6 +58,7 @@ type Users = {
 };
 
 export const deleteWords = (): boolean => {
+  console.log('deleteWords performed')
   try {  
     // Calculate 15 seconds ago
     const fortyEightHoursAgo = new Date();
@@ -67,14 +68,17 @@ export const deleteWords = (): boolean => {
     const users = db.prepare('SELECT * FROM users').all() as Users[];
 
     // Process each user's words array
+    console.log('users',users)
     users.forEach(user => {
       // Parse the words array (stored as JSON in the database)
       const words = JSON.parse(user.words || '[]') as { text: string; timestamp: string }[];
 
       // Filter out words older than 15 seconds
       const filteredWords = words.filter(
-        (w: { timestamp: string }) => new Date(w.timestamp) > fortyEightHoursAgo
+        (w: any) => new Date(w.timestamp) > fortyEightHoursAgo
       );
+
+      console.log('fiyer',filteredWords);
 
       // Update the database with the filtered words array
       db.prepare('UPDATE users SET words = ? WHERE chat_id = ?')
@@ -92,8 +96,6 @@ export const deleteWords = (): boolean => {
 export const deleteWordFromArray = (wordText: string, chatId: number): string | boolean => {
   try {
     const words = getWords(chatId);
-    // console.log("old words",words);
-    // console.log("word to delete",wordText);
     console.log(words,'words');
     let exist = false;
     const newWords = words.filter((w:any) =>{

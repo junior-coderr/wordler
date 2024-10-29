@@ -58,6 +58,6 @@ const sendRemainder = async ():Promise<boolean>=>{
 
 }
 
-sendRemainder();
+// sendRemainder();
 
 export default sendRemainder;

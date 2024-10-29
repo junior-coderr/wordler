@@ -96,7 +96,7 @@ const deleteWordsTest = () => {
         console.error('Test 5 error:', error);
     }
 }
-// deleteWordsTest();
+deleteWordsTest();
 
 const addOrUpdateWordTest = () => {
   try {
@@ -116,7 +116,7 @@ const addOrUpdateWordTest = () => {
 }
 }
 
-addOrUpdateWordTest();
+// addOrUpdateWordTest();
 const getAllUsersTest = () => {
     const allUsers = getAllUsers();
     for (const user of allUsers) {
