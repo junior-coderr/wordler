@@ -28,6 +28,7 @@ export const addOrUpdateWord = (chatId: number, word: { text: string, timestamp:
       const words: { text: string, timestamp: string }[] = JSON.parse(user.words || '[]');
       if (!words.some((w:any) => w?.text === word?.text)) {
         words.push(word);
+        console.log("words arr while adding",words);
         db.prepare('UPDATE users SET words = ? WHERE chat_id = ?')
           .run(JSON.stringify(words), chatId);
       }
@@ -46,8 +47,8 @@ export const addOrUpdateWord = (chatId: number, word: { text: string, timestamp:
 export const getWords = (chatId: number): { text: string, timestamp: string }[] => {
   const user = db.prepare<User>('SELECT words FROM users WHERE chat_id = ?').get(chatId as unknown as User) as User | undefined;
   const words = JSON.parse(user?.words || '[]');
-  const wordsText = words.map((word:any)=>word?.text);
-  return wordsText;
+  // const wordsText = words.map((word:any)=>word?.text);
+  return words;
 };
 type Users = {
   chat_id: number;
@@ -59,8 +60,8 @@ type Users = {
 export const deleteWords = (): boolean => {
   try {  
     // Calculate 15 seconds ago
-    const fifteenSecondsAgo = new Date();
-    fifteenSecondsAgo.setSeconds(fifteenSecondsAgo.getSeconds() - 20);
+    const fortyEightHoursAgo = new Date();
+    fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48);
 
     // Fetch all users from the database
     const users = db.prepare('SELECT * FROM users').all() as Users[];
@@ -72,7 +73,7 @@ export const deleteWords = (): boolean => {
 
       // Filter out words older than 15 seconds
       const filteredWords = words.filter(
-        (w: { timestamp: string }) => new Date(w.timestamp) > fifteenSecondsAgo
+        (w: { timestamp: string }) => new Date(w.timestamp) > fortyEightHoursAgo
       );
 
       // Update the database with the filtered words array
@@ -91,19 +92,19 @@ export const deleteWords = (): boolean => {
 export const deleteWordFromArray = (wordText: string, chatId: number): string | boolean => {
   try {
     const words = getWords(chatId);
-    console.log("old words",words);
-    console.log("word to delete",wordText);
+    // console.log("old words",words);
+    // console.log("word to delete",wordText);
+    console.log(words,'words');
     let exist = false;
     const newWords = words.filter((w:any) =>{
-      console.log("w",w);
-      if(w === wordText){
+      if(w.text === wordText){
         exist = true;
       }
-      return w !== wordText;
+      return w.text !== wordText;
     });
     console.log("new words",newWords);
     db.prepare('UPDATE users SET words = ? WHERE chat_id = ?').run(JSON.stringify(newWords), chatId);
-    if(!exist) return "Word is not in your list";
+    if(!exist) return `🚫 This word isn’t in your list! 📜`;
     return exist;
   } catch (error) {
     console.log(error);

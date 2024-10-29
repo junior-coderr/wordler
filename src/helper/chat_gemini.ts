@@ -1,18 +1,15 @@
+// Answer the following question in one short sentence with relevant emojis. Do not use any symbols other than emojis. Keep it simple and clear.
+
 // Make sure to include these imports:
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 
 
 
-export const getMeaning = async (word:string):Promise<string | null>=>{ 
+export default async function chatWithGemin(question:string):Promise<string | null>{ 
   const geminiKey= process.env.GEMINI_KEY;
-  const prompt = `Provide only one clear definition and one example sentence for the word "${word}". Include emojis if possible. Format it exactly like this:
-
-  word: the definition here.
-  \n
-  Example: an example sentence here.
-
-  Do not add any additional meanings, symbols, and asterisks. Avoid any extra information adhere to the format strictly.`;
+  const prompt = `chat in one short sentence with relevant emojis and  words. Do not use any symbols other than emojis. Keep it simple and clear.
+  Question: ${question}`;
   try{
     if(!geminiKey) return null
     const genAI = new GoogleGenerativeAI(geminiKey);
