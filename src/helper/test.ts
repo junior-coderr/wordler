@@ -90,7 +90,7 @@ async function runTests() {
 
 const deleteWordsTest = () => {
   try {
-        console.log('\nTest 5: Deleting words...');
+        // console.log('\nTest 5: Deleting words...');
          deleteWords(); // Ensure async/await if the function is async
     } catch (error) {
         console.error('Test 5 error:', error);
@@ -126,4 +126,4 @@ const getAllUsersTest = () => {
     }
 }
 
-// getAllUsersTest();
+getAllUsersTest();

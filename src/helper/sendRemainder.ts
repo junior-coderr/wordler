@@ -41,12 +41,16 @@ const sendRemainder = async ():Promise<boolean>=>{
       const words = JSON.parse(user.words);
       const wordsText = words.map((word:any)=>word.text);
       console.log(wordsText,'wordsText');
+      const chatId = user.chat_id;
       if(wordsText.length>0){
         const meaning = await getMeaning(wordsText);
         const responseText = `Here are the meanings of the words you set as reminders: \n\n${meaning}`;
         console.log(responseText,'responseText');
-        const chatId = user.chat_id;
         await sendRes_telegram(chatId,responseText);
+      }else{
+        console.log('no words to send, list is empty',user);
+        await sendRes_telegram(chatId,'You have no words set as reminders.');
+
       }
     });
     return true;
@@ -57,7 +61,5 @@ const sendRemainder = async ():Promise<boolean>=>{
 
 
 }
-
-// sendRemainder();
 
 export default sendRemainder;

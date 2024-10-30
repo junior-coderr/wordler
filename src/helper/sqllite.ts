@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import sendRes_telegram from './sendRes_telegram';
 
 const db = new Database('wordler.db');
 
@@ -75,7 +76,12 @@ export const deleteWords = (): boolean => {
 
       // Filter out words older than 15 seconds
       const filteredWords = words.filter(
-        (w: any) => new Date(w.timestamp) > fortyEightHoursAgo
+        (w: any) =>{
+          console.log(w.timestamp,'w.timestamp');
+          console.log(new Date(w.timestamp),'new Date(w.timestamp)');
+          console.log(fortyEightHoursAgo,'fortyEightHoursAgo');
+          return new Date(w.timestamp) > fortyEightHoursAgo
+        }
       );
 
       console.log('fiyer',filteredWords);
@@ -84,7 +90,10 @@ export const deleteWords = (): boolean => {
       db.prepare('UPDATE users SET words = ? WHERE chat_id = ?')
         .run(JSON.stringify(filteredWords), user.chat_id);
     });
-
+    const usersAfterDelete = db.prepare('SELECT * FROM users').all() as Users[];
+    usersAfterDelete.forEach(async (user:Users)=>{
+      await sendRes_telegram(user.chat_id.toString(),'Words deleted successfully. word function ran');
+    });
     return true;
   } catch (error) {
     console.log(error);
