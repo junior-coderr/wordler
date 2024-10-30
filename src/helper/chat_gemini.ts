@@ -18,7 +18,7 @@ export default async function chatWithGemin(question:string):Promise<string | nu
     console.log(result.response.text(),'result');
     return result.response.text();
   } catch (error) {
-    console.error(error);
+    console.log(error);
     return null;
   }
 } 

@@ -22,7 +22,7 @@ async function runTests() {
         //     console.log('❌ Test 1 failed: Word was not found in database');
         // }
     } catch (error) {
-        console.error('Test 1 error:', error);
+        console.log('Test 1 error:', error);
     }
 
     // // Test 2: Update existing user with new word
@@ -42,7 +42,7 @@ async function runTests() {
         //     console.log('❌ Test 2 failed: Second word was not found in database');
         // }
     } catch (error) {
-        console.error('Test 2 error:', error);
+        console.log('Test 2 error:', error);
     }
 
     // // Test 3: Try to add duplicate word
@@ -62,7 +62,7 @@ async function runTests() {
             console.log('❌ Test 3 failed: Duplicate word handling failed');
         }
     } catch (error) {
-        console.error('Test 3 error:', error);
+        console.log('Test 3 error:', error);
     }
 
     // Test 4: Get all users
@@ -71,7 +71,7 @@ async function runTests() {
         const allUsers =  getAllUsers(); // Ensure async/await if the function is async
         console.log('All users:', allUsers);
     } catch (error) {
-        console.error('Test 4 error:', error);
+        console.log('Test 4 error:', error);
     }
 
     // Test 5: Delete words
@@ -93,7 +93,7 @@ const deleteWordsTest = () => {
         // console.log('\nTest 5: Deleting words...');
          deleteWords(); // Ensure async/await if the function is async
     } catch (error) {
-        console.error('Test 5 error:', error);
+        console.log('Test 5 error:', error);
     }
 }
 deleteWordsTest();
@@ -112,7 +112,7 @@ const addOrUpdateWordTest = () => {
     // const words =  getWords(testChatId); // Ensure async/await if the function is async
 
 } catch (error) {
-    console.error('Test 1 error:', error);
+    console.log('Test 1 error:', error);
 }
 }
 

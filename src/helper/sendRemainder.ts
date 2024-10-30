@@ -25,7 +25,7 @@ const getMeaning = async (words: string[]): Promise<string | null> => {
     const result = await model.generateContent(prompt);
     return result.response.text();
   } catch (error) {
-    console.error(error);
+    console.log(error);
     return null;
   }
 };
@@ -55,7 +55,7 @@ const sendRemainder = async ():Promise<boolean>=>{
     });
     return true;
   } catch (error) {
-    console.error(error);
+    console.log('error in sendRemainder',error);
     return false;
   }
 

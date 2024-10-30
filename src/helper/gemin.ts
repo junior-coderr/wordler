@@ -21,7 +21,7 @@ export const getMeaning = async (word:string):Promise<string | null>=>{
     console.log(result.response.text(),'result');
     return result.response.text();
   } catch (error) {
-    console.error(error);
+    console.log(error);
     return null;
   }
 } 

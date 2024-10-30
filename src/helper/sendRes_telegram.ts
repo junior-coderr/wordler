@@ -18,7 +18,7 @@ export default async function sendRes_telegram(chatId: string, responseText: str
     console.log('data',data);
     return true;
   } catch (error) {
-    console.error('Error sending message:', error);
+    console.log('Error sending message:', error);
     return false;
   }
 }

@@ -25,7 +25,6 @@ startRandomJobScheduler();
 app.post("/api/bot", async (req: Request, res: Response) => {
   try {
     const { message } = req.body;
-    console.log(message,'message');
     const text= message?.text; // Get the text of the message
     const chat = message?.chat; // Get chat info
     const chatId = chat?.id; // Get chat ID
