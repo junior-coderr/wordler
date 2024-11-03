@@ -30,7 +30,7 @@ function runTests() {
             // }
         }
         catch (error) {
-            console.error('Test 1 error:', error);
+            console.log('Test 1 error:', error);
         }
         // // Test 2: Update existing user with new word
         try {
@@ -47,7 +47,7 @@ function runTests() {
             // }
         }
         catch (error) {
-            console.error('Test 2 error:', error);
+            console.log('Test 2 error:', error);
         }
         // // Test 3: Try to add duplicate word
         try {
@@ -65,7 +65,7 @@ function runTests() {
             }
         }
         catch (error) {
-            console.error('Test 3 error:', error);
+            console.log('Test 3 error:', error);
         }
         // Test 4: Get all users
         try {
@@ -74,7 +74,7 @@ function runTests() {
             console.log('All users:', allUsers);
         }
         catch (error) {
-            console.error('Test 4 error:', error);
+            console.log('Test 4 error:', error);
         }
         // Test 5: Delete words
         // try {
@@ -91,14 +91,14 @@ function runTests() {
 // });
 const deleteWordsTest = () => {
     try {
-        console.log('\nTest 5: Deleting words...');
+        // console.log('\nTest 5: Deleting words...');
         (0, sqllite_1.deleteWords)(); // Ensure async/await if the function is async
     }
     catch (error) {
-        console.error('Test 5 error:', error);
+        console.log('Test 5 error:', error);
     }
 };
-// deleteWordsTest();
+deleteWordsTest();
 const addOrUpdateWordTest = () => {
     try {
         const testChatId = 123456;
@@ -109,7 +109,7 @@ const addOrUpdateWordTest = () => {
         // const words =  getWords(testChatId); // Ensure async/await if the function is async
     }
     catch (error) {
-        console.error('Test 1 error:', error);
+        console.log('Test 1 error:', error);
     }
 };
 // addOrUpdateWordTest();

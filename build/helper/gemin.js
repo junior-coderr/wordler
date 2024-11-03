@@ -31,7 +31,7 @@ const getMeaning = (word) => __awaiter(void 0, void 0, void 0, function* () {
         return result.response.text();
     }
     catch (error) {
-        console.error(error);
+        console.log(error);
         return null;
     }
 });

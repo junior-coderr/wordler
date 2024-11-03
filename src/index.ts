@@ -3,7 +3,6 @@ import dotenv from "dotenv";
 import { getMeaning } from "./helper/gemin";
 import { addOrUpdateWord, deleteWordFromArray, deleteWords, getWords } from "./helper/sqllite";
 import startRandomJobScheduler from "./helper/IntervalWork";
-import cron from "node-cron";
 import sendRes_telegram from "./helper/sendRes_telegram";
 import chatWithGemin from "./helper/chat_gemini";
 dotenv.config();
@@ -14,11 +13,12 @@ const app = express();
 // Use express.json() middleware to parse JSON bodies
 app.use(express.json());
 
-
-cron.schedule('0 6 */3 * *', () => {
+setInterval(() => {
   deleteWords();
-});
-startRandomJobScheduler();
+}, 49 * 60 * 60 * 1000);
+
+  startRandomJobScheduler();
+
 
 
 

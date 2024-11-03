@@ -1,10 +1,20 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAllUsers = exports.deleteWordFromArray = exports.deleteWords = exports.getWords = exports.addOrUpdateWord = void 0;
 const better_sqlite3_1 = __importDefault(require("better-sqlite3"));
+const sendRes_telegram_1 = __importDefault(require("./sendRes_telegram"));
 const db = new better_sqlite3_1.default('wordler.db');
 // Initialize the database with the required table
 db.exec(`
@@ -51,22 +61,34 @@ const getWords = (chatId) => {
 };
 exports.getWords = getWords;
 const deleteWords = () => {
+    console.log('deleteWords performed');
     try {
-        // Calculate 15 seconds ago
+        // Calculate 48 hours ago
         const fortyEightHoursAgo = new Date();
         fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48);
         // Fetch all users from the database
         const users = db.prepare('SELECT * FROM users').all();
         // Process each user's words array
+        console.log('users', users);
         users.forEach(user => {
             // Parse the words array (stored as JSON in the database)
             const words = JSON.parse(user.words || '[]');
-            // Filter out words older than 15 seconds
-            const filteredWords = words.filter((w) => new Date(w.timestamp) > fortyEightHoursAgo);
+            // Filter out words older than 48 hours
+            const filteredWords = words.filter((w) => {
+                console.log(w.timestamp, 'w.timestamp');
+                console.log(new Date(w.timestamp), 'new Date(w.timestamp)');
+                console.log(fortyEightHoursAgo, 'fortyEightHoursAgo');
+                return new Date(w.timestamp) > fortyEightHoursAgo;
+            });
+            console.log('fiyer', filteredWords);
             // Update the database with the filtered words array
             db.prepare('UPDATE users SET words = ? WHERE chat_id = ?')
                 .run(JSON.stringify(filteredWords), user.chat_id);
         });
+        const usersAfterDelete = db.prepare('SELECT * FROM users').all();
+        usersAfterDelete.forEach((user) => __awaiter(void 0, void 0, void 0, function* () {
+            yield (0, sendRes_telegram_1.default)(user.chat_id.toString(), 'Words deleted successfully. word function ran');
+        }));
         return true;
     }
     catch (error) {
@@ -78,8 +100,6 @@ exports.deleteWords = deleteWords;
 const deleteWordFromArray = (wordText, chatId) => {
     try {
         const words = (0, exports.getWords)(chatId);
-        // console.log("old words",words);
-        // console.log("word to delete",wordText);
         console.log(words, 'words');
         let exist = false;
         const newWords = words.filter((w) => {

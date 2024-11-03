@@ -16,7 +16,7 @@ const express_1 = __importDefault(require("express"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const gemin_1 = require("./helper/gemin");
 const sqllite_1 = require("./helper/sqllite");
-const node_cron_1 = __importDefault(require("node-cron"));
+const IntervalWork_1 = __importDefault(require("./helper/IntervalWork"));
 const sendRes_telegram_1 = __importDefault(require("./helper/sendRes_telegram"));
 const chat_gemini_1 = __importDefault(require("./helper/chat_gemini"));
 dotenv_1.default.config();
@@ -24,14 +24,13 @@ const PORT = process.env.PORT || 3000;
 const app = (0, express_1.default)();
 // Use express.json() middleware to parse JSON bodies
 app.use(express_1.default.json());
-node_cron_1.default.schedule('0 6 */3 * *', () => {
+setInterval(() => {
     (0, sqllite_1.deleteWords)();
-});
-// startRandomJobScheduler();
+}, 49 * 60 * 60 * 1000);
+(0, IntervalWork_1.default)();
 app.post("/api/bot", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { message } = req.body;
-        console.log(message, 'message');
         const text = message === null || message === void 0 ? void 0 : message.text; // Get the text of the message
         const chat = message === null || message === void 0 ? void 0 : message.chat; // Get chat info
         const chatId = chat === null || chat === void 0 ? void 0 : chat.id; // Get chat ID

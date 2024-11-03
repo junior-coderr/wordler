@@ -61,7 +61,7 @@ type Users = {
 export const deleteWords = (): boolean => {
   console.log('deleteWords performed')
   try {  
-    // Calculate 15 seconds ago
+    // Calculate 48 hours ago
     const fortyEightHoursAgo = new Date();
     fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48);
 
@@ -69,17 +69,17 @@ export const deleteWords = (): boolean => {
     const users = db.prepare('SELECT * FROM users').all() as Users[];
 
     // Process each user's words array
-    console.log('users',users)
+    console.log('users', users)
     users.forEach(user => {
       // Parse the words array (stored as JSON in the database)
       const words = JSON.parse(user.words || '[]') as { text: string; timestamp: string }[];
 
-      // Filter out words older than 15 seconds
+      // Filter out words older than 48 hours
       const filteredWords = words.filter(
-        (w: any) =>{
-          console.log(w.timestamp,'w.timestamp');
-          console.log(new Date(w.timestamp),'new Date(w.timestamp)');
-          console.log(fortyEightHoursAgo,'fortyEightHoursAgo');
+        (w: any) => {
+          console.log(w.timestamp, 'w.timestamp');
+          console.log(new Date(w.timestamp), 'new Date(w.timestamp)');
+          console.log(fortyEightHoursAgo, 'fortyEightHoursAgo');
           return new Date(w.timestamp) > fortyEightHoursAgo
         }
       );

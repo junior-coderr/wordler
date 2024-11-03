@@ -25,6 +25,7 @@ const startRandomJobScheduler = () => {
             console.log('Error in sendRemainder', error);
         }
     });
+    runJob(6);
     // Recursive function to schedule the next job after a random interval
     const scheduleNextJob = () => {
         // Calculate a random interval between 2 to 5 hours
@@ -58,11 +59,11 @@ const startRandomJobScheduler = () => {
     const currentHour = now.getHours();
     if (currentHour >= 6 && currentHour < 24) {
         console.log("Starting scheduler immediately.");
-        scheduleNextJob(); // Start immediately if it's between 6 AM and midnight
+        // scheduleNextJob(); // Start immediately if it's between 6 AM and midnight
     }
     else {
         console.log("Outside of the allowed time range. Waiting until 6 AM tomorrow.");
-        scheduleFirstJobTomorrow(); // Otherwise, wait until 6 AM
+        // scheduleFirstJobTomorrow(); // Otherwise, wait until 6 AM
     }
 };
 console.log("Scheduled task to run every 3rd day at 6 AM.");
