@@ -1,131 +1,133 @@
-import Database from 'better-sqlite3';
 import sendRes_telegram from './sendRes_telegram';
+import User,{userSchema} from './models/user';
+import { IWord,IUser } from './types/schema.types';
+import connectDB from './db/connect.db';
 
-const db = new Database('wordler.db');
+// Connect to MongoDB
 
-// Initialize the database with the required table
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    chat_id INTEGER PRIMARY KEY,
-    words TEXT,  -- Storing as JSON-encoded string, expires after 10 seconds
-    name TEXT,
-    createdAt TEXT
-  )
-`);
+// // Define User Schema
+// interface IWord {
+//   text: string;
+//   timestamp: string;
+// }
 
-interface User {
-  words: string;
-  createdAt: string; // Added createdAt property
-}
+// interface IUser extends Document {
+//   chat_id: number;
+//   words: IWord[];
+//   name: string;
+//   createdAt: Date;
+// }
+
+// const userSchema = new Schema<IUser>({
+//   chat_id: { type: Number, required: true, unique: true },
+//   words: [
+//     {
+//       text: { type: String, required: true },
+//       timestamp: { type: String, default: Date.now }
+//     }
+//   ],
+//   name: { type: String, required: true },
+//   createdAt: { type: Date, default: Date.now }
+// const User = mongoose.model<IUser>('User', userSchema);
 
 // Function to add or update a word for a user
-export const addOrUpdateWord = (chatId: number, word: { text: string, timestamp: string }, name: string): boolean => {
+export const addOrUpdateWord = async (chatId: number, word: IWord, name: string): Promise<boolean> => {
   try {
-    // Retrieve existing words for the user
-    const user = db.prepare<User>('SELECT words FROM users WHERE chat_id = ?').get(chatId as unknown as User) as User | undefined;
-    
+    await connectDB();
+    const user = await User.findOne({ chat_id: chatId }) as IUser;
+
     if (user) {
       // User exists, update their words
-      const words: { text: string, timestamp: string }[] = JSON.parse(user.words || '[]');
-      if (!words.some((w:any) => w?.text === word?.text)) {
-        words.push(word);
-        console.log("words arr while adding",words);
-        db.prepare('UPDATE users SET words = ? WHERE chat_id = ?')
-          .run(JSON.stringify(words), chatId);
+      if (!user.words.some(w => w.text === word.text)) {
+        user.words.push(word);
+        await user.save();
       }
     } else {
       // New user, insert with the first word
-      db.prepare('INSERT INTO users (chat_id, words, name, createdAt) VALUES (?, ?, ?, ?)')
-        .run(chatId, JSON.stringify([word]), name, new Date().toISOString());
+      await User.create({
+        chat_id: chatId,
+        words: [word],
+        name,
+        createdAt: new Date()
+      });
     }
     return true;
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return false;
   }
 };
 
-export const getWords = (chatId: number): { text: string, timestamp: string }[] => {
-  const user = db.prepare<User>('SELECT words FROM users WHERE chat_id = ?').get(chatId as unknown as User) as User | undefined;
-  const words = JSON.parse(user?.words || '[]');
-  // const wordsText = words.map((word:any)=>word?.text);
-  return words;
-};
-type Users = {
-  chat_id: number;
-  words: string; // JSON string containing an array of word objects with timestamps
-  name: string;
-  createdAt: string;
+// Function to retrieve words for a user
+export const getWords = async (chatId: number): Promise<IWord[] | null> => {
+  try {
+    
+    await connectDB();
+    const user = await User.findOne({ chat_id: chatId });
+    return user?.words || [];
+  } catch (error) {
+    console.log('error somewere!',error);
+   return null 
+  }
 };
 
-export const deleteWords = (): boolean => {
-  console.log('deleteWords performed')
-  try {  
-    // Calculate 48 hours ago
+// Function to delete words older than 48 hours
+export const deleteWords = async (): Promise<boolean | null> => {
+  try {
+    await connectDB();
     const fortyEightHoursAgo = new Date();
     fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48);
 
-    // Fetch all users from the database
-    const users = db.prepare('SELECT * FROM users').all() as Users[];
+    const users = await User.find();
 
-    // Process each user's words array
-    console.log('users', users)
-    users.forEach(user => {
-      // Parse the words array (stored as JSON in the database)
-      const words = JSON.parse(user.words || '[]') as { text: string; timestamp: string }[];
-
+    for (const user of users) {
       // Filter out words older than 48 hours
-      const filteredWords = words.filter(
-        (w: any) => {
-          console.log(w.timestamp, 'w.timestamp');
-          console.log(new Date(w.timestamp), 'new Date(w.timestamp)');
-          console.log(fortyEightHoursAgo, 'fortyEightHoursAgo');
-          return new Date(w.timestamp) > fortyEightHoursAgo
-        }
+      const filteredWords = user.words.filter(
+        w => new Date(w.timestamp) > fortyEightHoursAgo
       );
 
-      console.log('fiyer',filteredWords);
+      // Update the user's words if they have changed
+      if (filteredWords.length !== user.words.length) {
+        user.words = filteredWords;
+        await user.save();
 
-      // Update the database with the filtered words array
-      db.prepare('UPDATE users SET words = ? WHERE chat_id = ?')
-        .run(JSON.stringify(filteredWords), user.chat_id);
-    });
-    const usersAfterDelete = db.prepare('SELECT * FROM users').all() as Users[];
-    usersAfterDelete.forEach(async (user:Users)=>{
-      await sendRes_telegram(user.chat_id.toString(),'Words deleted successfully. word function ran');
-    });
+        // Send notification after deletion
+        await sendRes_telegram(user.chat_id.toString(), 'Words deleted successfully. word function ran');
+      }
+    }
     return true;
   } catch (error) {
-    console.log(error);
-    return false;
+    console.log('error somewhere!',error);
+    return null;
   }
 };
 
-
-export const deleteWordFromArray = (wordText: string, chatId: number): string | boolean => {
+// Function to delete a specific word for a user
+export const deleteWordFromArray = async (wordText: string, chatId: number): Promise<string | boolean | null> => {
   try {
-    const words = getWords(chatId);
-    console.log(words,'words');
-    let exist = false;
-    const newWords = words.filter((w:any) =>{
-      if(w.text === wordText){
-        exist = true;
-      }
-      return w.text !== wordText;
-    });
-    console.log("new words",newWords);
-    db.prepare('UPDATE users SET words = ? WHERE chat_id = ?').run(JSON.stringify(newWords), chatId);
-    if(!exist) return `🚫 This word isn’t in your list! 📜`;
-    return exist;
-  } catch (error) {
-    console.log(error);
-    return false;
-  }
-}
+    await connectDB();
+   const user = await User.findOne({ chat_id: chatId });
+    if (!user) return `🚫 User not found! 📜`;
 
-export const getAllUsers = (): User[] => {
-  return db.prepare('SELECT * FROM users').all() as User[];
+    const newWords = user.words.filter(w => w.text !== wordText);
+    if (newWords.length === user.words.length) return `🚫 This word isn’t in your list! 📜`;
+
+    user.words = newWords;
+    await user.save();
+    return true;
+  } catch (error) {
+    console.log('error in deleting ',error);
+    return null;
+  }
 };
 
-// Function to retrieve words for a use
-export default db;
+// Function to get all users
+export const getAllUsers = async (): Promise<IUser[] | null> => {
+  try {
+    await connectDB();
+    return await User.find();
+  } catch (error) {
+    console.log('error getting all the users',error)
+    return null;
+  }
+};

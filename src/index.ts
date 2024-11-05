@@ -1,5 +1,6 @@
 import express, { Request, response, Response } from "express";
 import dotenv from "dotenv";
+import cron from "node-cron"
 import { getMeaning } from "./helper/gemin";
 import { addOrUpdateWord, deleteWordFromArray, deleteWords, getWords } from "./helper/sqllite";
 import startRandomJobScheduler from "./helper/IntervalWork";
@@ -13,9 +14,10 @@ const app = express();
 // Use express.json() middleware to parse JSON bodies
 app.use(express.json());
 
-setInterval(() => {
+cron.schedule('0 5 */2 * *', () => {
+  console.log('Running task every 2 days at midnight');
   deleteWords();
-}, 49 * 60 * 60 * 1000);
+});
 
   startRandomJobScheduler();
 
@@ -70,7 +72,7 @@ Here, you can easily search for word meanings and set reminders for your favorit
       }
       return;
     case "/set":
-      const addWord =  addOrUpdateWord(chatId, { text: text.split(" ")[1], timestamp: new Date().toISOString() }, name );   
+      const addWord =  await addOrUpdateWord(chatId, { text: text.split(" ")[1], timestamp: new Date().toISOString() }, name );   
       if(addWord){
         await sendRes_telegram(chatId,`✅ Word added to your list! 📚`);
         res.status(200).json({ status: 'Message processed', addWord });
@@ -80,7 +82,7 @@ Here, you can easily search for word meanings and set reminders for your favorit
       }
       return;
     case "/rm":
-      const deleteWord = deleteWordFromArray(text.split(" ")[1], chatId);
+      const deleteWord =await deleteWordFromArray(text.split(" ")[1], chatId);
       if(typeof deleteWord === "string"){
         await sendRes_telegram(chatId,deleteWord);
         res.status(200).json({ status: 'Message processed', deleteWord });
@@ -93,8 +95,8 @@ Here, you can easily search for word meanings and set reminders for your favorit
       }
       return;
     case "/list":
-      const list = getWords(chatId);
-      if(list.length > 0){
+      const list = await getWords(chatId);
+      if(list&&list.length > 0){
         await sendRes_telegram(chatId,`📝 Here’s your word list:\n${list.map((w, i) => `${i + 1}. ${w.text} ✨`).join("\n")}`
 );
         res.status(200).json({ status: 'Message processed', list });
