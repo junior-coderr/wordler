@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const node_cron_1 = __importDefault(require("node-cron"));
 const gemin_1 = require("./helper/gemin");
 const sqllite_1 = require("./helper/sqllite");
 const IntervalWork_1 = __importDefault(require("./helper/IntervalWork"));
@@ -24,9 +25,10 @@ const PORT = process.env.PORT || 3000;
 const app = (0, express_1.default)();
 // Use express.json() middleware to parse JSON bodies
 app.use(express_1.default.json());
-setInterval(() => {
+node_cron_1.default.schedule('0 5 */2 * *', () => {
+    console.log('Running task every 2 days at midnight');
     (0, sqllite_1.deleteWords)();
-}, 49 * 60 * 60 * 1000);
+});
 (0, IntervalWork_1.default)();
 app.post("/api/bot", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -74,7 +76,7 @@ Here, you can easily search for word meanings and set reminders for your favorit
                 }
                 return;
             case "/set":
-                const addWord = (0, sqllite_1.addOrUpdateWord)(chatId, { text: text.split(" ")[1], timestamp: new Date().toISOString() }, name);
+                const addWord = yield (0, sqllite_1.addOrUpdateWord)(chatId, { text: text.split(" ")[1], timestamp: new Date().toISOString() }, name);
                 if (addWord) {
                     yield (0, sendRes_telegram_1.default)(chatId, `✅ Word added to your list! 📚`);
                     res.status(200).json({ status: 'Message processed', addWord });
@@ -85,7 +87,7 @@ Here, you can easily search for word meanings and set reminders for your favorit
                 }
                 return;
             case "/rm":
-                const deleteWord = (0, sqllite_1.deleteWordFromArray)(text.split(" ")[1], chatId);
+                const deleteWord = yield (0, sqllite_1.deleteWordFromArray)(text.split(" ")[1], chatId);
                 if (typeof deleteWord === "string") {
                     yield (0, sendRes_telegram_1.default)(chatId, deleteWord);
                     res.status(200).json({ status: 'Message processed', deleteWord });
@@ -100,8 +102,8 @@ Here, you can easily search for word meanings and set reminders for your favorit
                 }
                 return;
             case "/list":
-                const list = (0, sqllite_1.getWords)(chatId);
-                if (list.length > 0) {
+                const list = yield (0, sqllite_1.getWords)(chatId);
+                if (list && list.length > 0) {
                     yield (0, sendRes_telegram_1.default)(chatId, `📝 Here’s your word list:\n${list.map((w, i) => `${i + 1}. ${w.text} ✨`).join("\n")}`);
                     res.status(200).json({ status: 'Message processed', list });
                 }

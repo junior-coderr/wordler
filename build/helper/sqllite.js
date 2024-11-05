@@ -13,117 +13,130 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAllUsers = exports.deleteWordFromArray = exports.deleteWords = exports.getWords = exports.addOrUpdateWord = void 0;
-const better_sqlite3_1 = __importDefault(require("better-sqlite3"));
 const sendRes_telegram_1 = __importDefault(require("./sendRes_telegram"));
-const db = new better_sqlite3_1.default('wordler.db');
-// Initialize the database with the required table
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    chat_id INTEGER PRIMARY KEY,
-    words TEXT,  -- Storing as JSON-encoded string, expires after 10 seconds
-    name TEXT,
-    createdAt TEXT
-  )
-`);
+const user_1 = __importDefault(require("./models/user"));
+const connect_db_1 = __importDefault(require("./db/connect.db"));
+// Connect to MongoDB
+// // Define User Schema
+// interface IWord {
+//   text: string;
+//   timestamp: string;
+// }
+// interface IUser extends Document {
+//   chat_id: number;
+//   words: IWord[];
+//   name: string;
+//   createdAt: Date;
+// }
+// const userSchema = new Schema<IUser>({
+//   chat_id: { type: Number, required: true, unique: true },
+//   words: [
+//     {
+//       text: { type: String, required: true },
+//       timestamp: { type: String, default: Date.now }
+//     }
+//   ],
+//   name: { type: String, required: true },
+//   createdAt: { type: Date, default: Date.now }
+// const User = mongoose.model<IUser>('User', userSchema);
 // Function to add or update a word for a user
-const addOrUpdateWord = (chatId, word, name) => {
+const addOrUpdateWord = (chatId, word, name) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        // Retrieve existing words for the user
-        const user = db.prepare('SELECT words FROM users WHERE chat_id = ?').get(chatId);
+        yield (0, connect_db_1.default)();
+        const user = yield user_1.default.findOne({ chat_id: chatId });
         if (user) {
             // User exists, update their words
-            const words = JSON.parse(user.words || '[]');
-            if (!words.some((w) => (w === null || w === void 0 ? void 0 : w.text) === (word === null || word === void 0 ? void 0 : word.text))) {
-                words.push(word);
-                console.log("words arr while adding", words);
-                db.prepare('UPDATE users SET words = ? WHERE chat_id = ?')
-                    .run(JSON.stringify(words), chatId);
+            if (!user.words.some(w => w.text === word.text)) {
+                user.words.push(word);
+                yield user.save();
             }
         }
         else {
             // New user, insert with the first word
-            db.prepare('INSERT INTO users (chat_id, words, name, createdAt) VALUES (?, ?, ?, ?)')
-                .run(chatId, JSON.stringify([word]), name, new Date().toISOString());
+            yield user_1.default.create({
+                chat_id: chatId,
+                words: [word],
+                name,
+                createdAt: new Date()
+            });
         }
         return true;
     }
     catch (error) {
-        console.log(error);
+        console.error(error);
         return false;
     }
-};
+});
 exports.addOrUpdateWord = addOrUpdateWord;
-const getWords = (chatId) => {
-    const user = db.prepare('SELECT words FROM users WHERE chat_id = ?').get(chatId);
-    const words = JSON.parse((user === null || user === void 0 ? void 0 : user.words) || '[]');
-    // const wordsText = words.map((word:any)=>word?.text);
-    return words;
-};
-exports.getWords = getWords;
-const deleteWords = () => {
-    console.log('deleteWords performed');
+// Function to retrieve words for a user
+const getWords = (chatId) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        // Calculate 48 hours ago
+        yield (0, connect_db_1.default)();
+        const user = yield user_1.default.findOne({ chat_id: chatId });
+        return (user === null || user === void 0 ? void 0 : user.words) || [];
+    }
+    catch (error) {
+        console.log('error somewere!', error);
+        return null;
+    }
+});
+exports.getWords = getWords;
+// Function to delete words older than 48 hours
+const deleteWords = () => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield (0, connect_db_1.default)();
         const fortyEightHoursAgo = new Date();
         fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48);
-        // Fetch all users from the database
-        const users = db.prepare('SELECT * FROM users').all();
-        // Process each user's words array
-        console.log('users', users);
-        users.forEach(user => {
-            // Parse the words array (stored as JSON in the database)
-            const words = JSON.parse(user.words || '[]');
+        const users = yield user_1.default.find();
+        for (const user of users) {
             // Filter out words older than 48 hours
-            const filteredWords = words.filter((w) => {
-                console.log(w.timestamp, 'w.timestamp');
-                console.log(new Date(w.timestamp), 'new Date(w.timestamp)');
-                console.log(fortyEightHoursAgo, 'fortyEightHoursAgo');
-                return new Date(w.timestamp) > fortyEightHoursAgo;
-            });
-            console.log('fiyer', filteredWords);
-            // Update the database with the filtered words array
-            db.prepare('UPDATE users SET words = ? WHERE chat_id = ?')
-                .run(JSON.stringify(filteredWords), user.chat_id);
-        });
-        const usersAfterDelete = db.prepare('SELECT * FROM users').all();
-        usersAfterDelete.forEach((user) => __awaiter(void 0, void 0, void 0, function* () {
-            yield (0, sendRes_telegram_1.default)(user.chat_id.toString(), 'Words deleted successfully. word function ran');
-        }));
+            const filteredWords = user.words.filter(w => new Date(w.timestamp) > fortyEightHoursAgo);
+            // Update the user's words if they have changed
+            if (filteredWords.length !== user.words.length) {
+                user.words = filteredWords;
+                yield user.save();
+                // Send notification after deletion
+                yield (0, sendRes_telegram_1.default)(user.chat_id.toString(), 'Words deleted successfully. word function ran');
+            }
+        }
         return true;
     }
     catch (error) {
-        console.log(error);
-        return false;
+        console.log('error somewhere!', error);
+        return null;
     }
-};
+});
 exports.deleteWords = deleteWords;
-const deleteWordFromArray = (wordText, chatId) => {
+// Function to delete a specific word for a user
+const deleteWordFromArray = (wordText, chatId) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const words = (0, exports.getWords)(chatId);
-        console.log(words, 'words');
-        let exist = false;
-        const newWords = words.filter((w) => {
-            if (w.text === wordText) {
-                exist = true;
-            }
-            return w.text !== wordText;
-        });
-        console.log("new words", newWords);
-        db.prepare('UPDATE users SET words = ? WHERE chat_id = ?').run(JSON.stringify(newWords), chatId);
-        if (!exist)
+        yield (0, connect_db_1.default)();
+        const user = yield user_1.default.findOne({ chat_id: chatId });
+        if (!user)
+            return `🚫 User not found! 📜`;
+        const newWords = user.words.filter(w => w.text !== wordText);
+        if (newWords.length === user.words.length)
             return `🚫 This word isn’t in your list! 📜`;
-        return exist;
+        user.words = newWords;
+        yield user.save();
+        return true;
     }
     catch (error) {
-        console.log(error);
-        return false;
+        console.log('error in deleting ', error);
+        return null;
     }
-};
+});
 exports.deleteWordFromArray = deleteWordFromArray;
-const getAllUsers = () => {
-    return db.prepare('SELECT * FROM users').all();
-};
+// Function to get all users
+const getAllUsers = () => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield (0, connect_db_1.default)();
+        return yield user_1.default.find();
+    }
+    catch (error) {
+        console.log('error getting all the users', error);
+        return null;
+    }
+});
 exports.getAllUsers = getAllUsers;
-// Function to retrieve words for a use
-exports.default = db;
 //# sourceMappingURL=sqllite.js.map

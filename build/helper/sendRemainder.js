@@ -12,10 +12,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const sqllite_1 = __importDefault(require("./sqllite"));
-const generative_ai_1 = require("@google/generative-ai");
 const dotenv_1 = __importDefault(require("dotenv"));
 const sendRes_telegram_1 = __importDefault(require("./sendRes_telegram"));
+const generative_ai_1 = require("@google/generative-ai");
+const user_1 = __importDefault(require("./models/user"));
 dotenv_1.default.config();
 const getMeaning = (words) => __awaiter(void 0, void 0, void 0, function* () {
     const geminiKey = process.env.GEMINI_KEY;
@@ -44,9 +44,10 @@ const getMeaning = (words) => __awaiter(void 0, void 0, void 0, function* () {
 });
 const sendRemainder = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const users = sqllite_1.default.prepare('SELECT * FROM users').all();
-        users.forEach((user) => __awaiter(void 0, void 0, void 0, function* () {
-            const words = JSON.parse(user.words);
+        // Fetch all users from MongoDB
+        const users = yield user_1.default.find({});
+        for (const user of users) {
+            const words = user.words || [];
             const wordsText = words.map((word) => word.text);
             console.log(wordsText, 'wordsText');
             const chatId = user.chat_id;
@@ -54,17 +55,17 @@ const sendRemainder = () => __awaiter(void 0, void 0, void 0, function* () {
                 const meaning = yield getMeaning(wordsText);
                 const responseText = `Here are the meanings of the words you set as reminders: \n\n${meaning}`;
                 console.log(responseText, 'responseText');
-                yield (0, sendRes_telegram_1.default)(chatId, responseText);
+                yield (0, sendRes_telegram_1.default)(chatId.toString(), responseText);
             }
             else {
-                console.log('no words to send, list is empty', user);
-                yield (0, sendRes_telegram_1.default)(chatId, 'You have no words set as reminders.');
+                console.log('No words to send, list is empty', user);
+                yield (0, sendRes_telegram_1.default)(chatId.toString(), 'You have no words set as reminders.');
             }
-        }));
+        }
         return true;
     }
     catch (error) {
-        console.log('error in sendRemainder', error);
+        console.log('Error in sendRemainder', error);
         return false;
     }
 });
