@@ -17,11 +17,11 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const node_cron_1 = __importDefault(require("node-cron"));
 const gemin_1 = require("./helper/gemin");
 const sqllite_1 = require("./helper/sqllite");
-const IntervalWork_1 = __importDefault(require("./helper/IntervalWork"));
 const sendRes_telegram_1 = __importDefault(require("./helper/sendRes_telegram"));
 const chat_gemini_1 = __importDefault(require("./helper/chat_gemini"));
 dotenv_1.default.config();
 const PORT = process.env.PORT || 3000;
+const IntervalWork_1 = require("./helper/IntervalWork");
 const app = (0, express_1.default)();
 // Use express.json() middleware to parse JSON bodies
 app.use(express_1.default.json());
@@ -29,7 +29,12 @@ node_cron_1.default.schedule('0 5 */2 * *', () => {
     console.log('Running task every 2 days at midnight');
     (0, sqllite_1.deleteWords)();
 });
-(0, IntervalWork_1.default)();
+// Schedule jobs every 4 hours (at 6 AM, 10 AM, 2 PM, 6 PM, 10 PM, 2 AM)
+node_cron_1.default.schedule('0 6,10,14,18,22,2 * * *', () => __awaiter(void 0, void 0, void 0, function* () {
+    console.log(`Scheduled job triggered at ${new Date().toLocaleTimeString()}`);
+    yield (0, IntervalWork_1.runJob)();
+}));
+console.log("Scheduled to run six times daily at fixed intervals (every 4 hours from 6 AM).");
 app.post("/api/bot", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { message } = req.body;

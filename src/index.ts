@@ -3,11 +3,11 @@ import dotenv from "dotenv";
 import cron from "node-cron"
 import { getMeaning } from "./helper/gemin";
 import { addOrUpdateWord, deleteWordFromArray, deleteWords, getWords } from "./helper/sqllite";
-import startRandomJobScheduler from "./helper/IntervalWork";
 import sendRes_telegram from "./helper/sendRes_telegram";
 import chatWithGemin from "./helper/chat_gemini";
 dotenv.config();
 const PORT = process.env.PORT || 3000;
+import { runJob } from "./helper/IntervalWork";
 
 
 const app = express();
@@ -19,7 +19,15 @@ cron.schedule('0 5 */2 * *', () => {
   deleteWords();
 });
 
-  startRandomJobScheduler();
+
+// Schedule jobs every 4 hours (at 6 AM, 10 AM, 2 PM, 6 PM, 10 PM, 2 AM)
+cron.schedule('0 6,10,14,18,22,2 * * *', async () => {
+  console.log(`Scheduled job triggered at ${new Date().toLocaleTimeString()}`);
+  await runJob();
+});
+
+console.log("Scheduled to run six times daily at fixed intervals (every 4 hours from 6 AM).");
+
 
 
 
